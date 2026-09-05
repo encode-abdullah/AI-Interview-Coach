@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import QuestionCard from "@/components/QuestionCard";
 import CopyButton from "@/components/CopyButton";
 
@@ -9,6 +9,7 @@ export default function PrepPage() {
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
 
   const handleGenerate = async () => {
     if (!jobDescription.trim()) {
@@ -16,9 +17,16 @@ export default function PrepPage() {
       return;
     }
 
+    if (loading) {
+      abortRef.current?.abort();
+      setLoading(false);
+      return;
+    }
+
     setError("");
     setLoading(true);
     setResult("");
+    abortRef.current = new AbortController();
 
     try {
       const res = await fetch("/api/generate", {
@@ -28,17 +36,47 @@ export default function PrepPage() {
           mode: "questions",
           jobDescription: jobDescription.trim(),
         }),
+        signal: abortRef.current.signal,
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
+        const data = await res.json();
         throw new Error(data.error || "Failed to generate");
       }
 
-      setResult(data.result);
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response stream");
+
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") break;
+            try {
+              const parsed = JSON.parse(data);
+              fullText += parsed.text;
+              setResult(fullText);
+            } catch {
+              // skip malformed chunks
+            }
+          }
+        }
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      if (err instanceof DOMException && err.name === "AbortError") {
+        // user cancelled
+      } else {
+        setError(err instanceof Error ? err.message : "Something went wrong");
+      }
     } finally {
       setLoading(false);
     }
@@ -55,6 +93,10 @@ export default function PrepPage() {
           .slice(1)
           .join("\n")
           .replace(/\*\*Answer:\*\*/g, "")
+          .replace(/\*\*Situation:\*\*/g, "Situation:")
+          .replace(/\*\*Task:\*\*/g, "Task:")
+          .replace(/\*\*Action:\*\*/g, "Action:")
+          .replace(/\*\*Result:\*\*/g, "Result:")
           .trim();
         return { question, answer };
       });
@@ -87,13 +129,16 @@ export default function PrepPage() {
 
       <button
         onClick={handleGenerate}
-        disabled={loading}
-        className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+          loading
+            ? "bg-red-600 text-white hover:bg-red-700"
+            : "bg-blue-600 text-white hover:bg-blue-700"
+        }`}
       >
-        {loading ? "Generating questions..." : "Generate Questions"}
+        {loading ? "Stop generating" : "Generate Questions"}
       </button>
 
-      {loading && (
+      {loading && !result && (
         <div className="mt-8 text-center">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           <p className="text-sm text-gray-500 mt-2">
@@ -102,7 +147,7 @@ export default function PrepPage() {
         </div>
       )}
 
-      {questions.length > 0 && (
+      {result && (
         <div className="mt-10">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold text-gray-900">
@@ -110,22 +155,24 @@ export default function PrepPage() {
             </h2>
             <CopyButton text={result} />
           </div>
-          <div className="space-y-4">
-            {questions.map((q, i) => (
-              <QuestionCard key={i} question={q.question} answer={q.answer} />
-            ))}
-          </div>
+
+          {questions.length > 0 ? (
+            <div className="space-y-3">
+              {questions.map((q, i) => (
+                <QuestionCard key={i} question={q.question} answer={q.answer} index={i + 1} />
+              ))}
+            </div>
+          ) : (
+            <div className="border border-gray-200 rounded-lg p-5 bg-white whitespace-pre-line text-sm leading-relaxed">
+              {result}
+            </div>
+          )}
         </div>
       )}
 
-      {result && !result.includes("### Q1:") && (
-        <div className="mt-10">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">
-            Result
-          </h2>
-          <div className="border border-gray-200 rounded-lg p-5 bg-white whitespace-pre-line text-sm leading-relaxed">
-            {result}
-          </div>
+      {!loading && !result && (
+        <div className="mt-10 text-center text-gray-400">
+          <p className="text-sm">Your questions will appear here</p>
         </div>
       )}
     </div>

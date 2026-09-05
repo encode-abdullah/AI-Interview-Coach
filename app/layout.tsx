@@ -38,7 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 Practice
               </Link>
               <a
-                href="https://github.com"
+                href="https://github.com/encode-abdullah/AI-Interview-Coach"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 hover:text-gray-900"
@@ -49,6 +49,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </div>
         </nav>
         <main className="flex-1">{children}</main>
+        <footer className="border-t border-gray-200 py-4 text-center text-xs text-gray-400">
+          Built with Next.js + Claude AI
+        </footer>
       </body>
     </html>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 interface Message {
   role: "user" | "ai";
@@ -13,15 +13,22 @@ export default function PracticePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userAnswer, setUserAnswer] = useState("");
   const [loading, setLoading] = useState(false);
+  const [questionCount, setQuestionCount] = useState(0);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   const startInterview = () => {
     if (!jobDescription.trim()) return;
     setStarted(true);
+    setQuestionCount(1);
     setMessages([
       {
         role: "ai",
         content:
-          "Let's begin the mock interview. I'll ask you questions one at a time. Take your time to think before answering.\n\nFirst question: Tell me about yourself and why you're interested in this role.",
+          "Let's begin the mock interview. I'll ask you questions one at a time and score your answers.\n\nFirst question: Tell me about yourself and why you're interested in this role.",
       },
     ]);
   };
@@ -29,10 +36,8 @@ export default function PracticePage() {
   const submitAnswer = async () => {
     if (!userAnswer.trim() || loading) return;
 
-    const newMessages: Message[] = [
-      ...messages,
-      { role: "user", content: userAnswer.trim() },
-    ];
+    const userMsg = { role: "user" as const, content: userAnswer.trim() };
+    const newMessages = [...messages, userMsg];
     setMessages(newMessages);
     setUserAnswer("");
     setLoading(true);
@@ -50,17 +55,46 @@ export default function PracticePage() {
         }),
       });
 
-      const data = await res.json();
+      if (!res.ok) throw new Error("Failed to get response");
 
-      if (!res.ok) throw new Error(data.error || "Failed to get response");
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No response stream");
 
-      setMessages([...newMessages, { role: "ai", content: data.result }]);
-    } catch (err) {
+      const decoder = new TextDecoder();
+      let fullText = "";
+
+      const aiMsg = { role: "ai" as const, content: "" };
+      setMessages([...newMessages, aiMsg]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const data = line.slice(6);
+            if (data === "[DONE]") break;
+            try {
+              const parsed = JSON.parse(data);
+              fullText += parsed.text;
+              setMessages([...newMessages, { role: "ai", content: fullText }]);
+            } catch {
+              // skip
+            }
+          }
+        }
+      }
+
+      setQuestionCount((c) => c + 1);
+    } catch {
       setMessages([
         ...newMessages,
         {
           role: "ai",
-          content: "Sorry, something went wrong. Let's try again.",
+          content: "Sorry, something went wrong. Let's try that again.",
         },
       ]);
     } finally {
@@ -99,11 +133,16 @@ export default function PracticePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">
-        Mock Interview
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Mock Interview
+        </h1>
+        <span className="text-sm text-gray-500">
+          Question {questionCount}
+        </span>
+      </div>
 
-      <div className="space-y-4 mb-6">
+      <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto">
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -116,13 +155,13 @@ export default function PracticePage() {
             <p className="text-xs font-medium text-gray-500 mb-1">
               {msg.role === "user" ? "You" : "Coach"}
             </p>
-            <p className="text-sm text-gray-800 whitespace-pre-line">
+            <div className="text-sm text-gray-800 whitespace-pre-line leading-relaxed">
               {msg.content}
-            </p>
+            </div>
           </div>
         ))}
 
-        {loading && (
+        {loading && messages[messages.length - 1]?.role === "user" && (
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mr-8">
             <div className="flex items-center gap-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
@@ -130,6 +169,8 @@ export default function PracticePage() {
             </div>
           </div>
         )}
+
+        <div ref={chatEndRef} />
       </div>
 
       <div className="flex gap-3">
@@ -139,10 +180,11 @@ export default function PracticePage() {
           placeholder="Type your answer..."
           className="flex-1 p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
           onKeyDown={(e) => {
-            if (e.key === "Enter" && e.metaKey) {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               submitAnswer();
             }
           }}
+          disabled={loading}
         />
         <button
           onClick={submitAnswer}
@@ -153,7 +195,7 @@ export default function PracticePage() {
         </button>
       </div>
       <p className="text-xs text-gray-400 mt-1">
-        Press Cmd+Enter to submit
+        Press Ctrl+Enter to submit
       </p>
     </div>
   );

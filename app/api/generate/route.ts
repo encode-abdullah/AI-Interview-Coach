@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { buildQuestionsPrompt, buildMockInterviewPrompt } from "@/lib/prompts";
 
@@ -12,9 +12,9 @@ export async function POST(req: NextRequest) {
     const { mode, jobDescription, conversationHistory } = body;
 
     if (!jobDescription) {
-      return NextResponse.json(
-        { error: "Job description is required" },
-        { status: 400 }
+      return new Response(
+        JSON.stringify({ error: "Job description is required" }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
       );
     }
 
@@ -29,21 +29,42 @@ export async function POST(req: NextRequest) {
       prompt = buildQuestionsPrompt(jobDescription);
     }
 
-    const message = await anthropic.messages.create({
+    const stream = await anthropic.messages.stream({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4096,
       messages: [{ role: "user", content: prompt }],
     });
 
-    const text =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        for await (const event of stream) {
+          if (
+            event.type === "content_block_delta" &&
+            event.delta.type === "text_delta"
+          ) {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`)
+            );
+          }
+        }
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+      },
+    });
 
-    return NextResponse.json({ result: text });
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive",
+      },
+    });
   } catch (error) {
     console.error("API error:", error);
-    return NextResponse.json(
-      { error: "Something went wrong. Check your API key and try again." },
-      { status: 500 }
+    return new Response(
+      JSON.stringify({ error: "Something went wrong. Check your API key and try again." }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
 }

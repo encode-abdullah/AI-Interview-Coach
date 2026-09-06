@@ -13,17 +13,17 @@ export default function QuestionCard({ question, answer, index }: QuestionCardPr
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="border border-gray-200 rounded-lg bg-white overflow-hidden">
+    <div className={`border rounded-lg bg-white overflow-hidden transition-colors ${expanded ? "border-blue-200" : "border-gray-200"}`}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full text-left p-5 flex items-start gap-3 hover:bg-gray-50 transition-colors"
+        className="w-full text-left p-4 sm:p-5 flex items-start gap-3 hover:bg-gray-50 transition-colors"
       >
-        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-blue-100 text-blue-700 text-sm font-medium flex items-center justify-center">
+        <span className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 text-blue-700 text-xs sm:text-sm font-medium flex items-center justify-center">
           {index}
         </span>
-        <span className="font-medium text-gray-900 flex-1">{question}</span>
+        <span className="font-medium text-gray-900 flex-1 text-sm sm:text-base leading-snug">{question}</span>
         <svg
-          className={`w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5 transition-transform ${expanded ? "rotate-180" : ""}`}
+          className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0 mt-1 transition-transform ${expanded ? "rotate-180" : ""}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -33,8 +33,8 @@ export default function QuestionCard({ question, answer, index }: QuestionCardPr
       </button>
 
       {expanded && (
-        <div className="px-5 pb-5 border-t border-gray-100">
-          <div className="mt-4 flex items-center justify-between">
+        <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-gray-100">
+          <div className="mt-3 flex items-center justify-between">
             <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">STAR Answer</span>
             <CopyButton text={answer} />
           </div>

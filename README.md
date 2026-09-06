@@ -1,6 +1,6 @@
 # AI Interview Prep Coach
 
-I built this because I was tired of Googling "common interview questions" and getting the same generic list every time. Every role is different — your prep should be too.
+I built this because I was tired of Googling "common interview questions" and getting the same generic list every time. Every role is different and your prep should be too.
 
 Paste a job description, and this tool generates tailored interview questions with structured STAR answers using AI.
 

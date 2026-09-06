@@ -149,8 +149,8 @@ export default function PrepPage() {
 
       {result && (
         <div className="mt-10">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900">
+          <div className="flex items-center justify-between mb-4 gap-2">
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
               Your Interview Questions
             </h2>
             <CopyButton text={result} />

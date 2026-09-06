@@ -142,14 +142,14 @@ export default function PracticePage() {
         </span>
       </div>
 
-      <div className="space-y-4 mb-6 max-h-[60vh] overflow-y-auto">
+      <div className="space-y-3 mb-4 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto">
         {messages.map((msg, i) => (
           <div
             key={i}
-            className={`p-4 rounded-lg ${
+            className={`p-3 sm:p-4 rounded-lg ${
               msg.role === "user"
-                ? "bg-blue-50 border border-blue-200 ml-8"
-                : "bg-gray-50 border border-gray-200 mr-8"
+                ? "bg-blue-50 border border-blue-200 ml-4 sm:ml-8"
+                : "bg-gray-50 border border-gray-200 mr-4 sm:mr-8"
             }`}
           >
             <p className="text-xs font-medium text-gray-500 mb-1">
@@ -162,7 +162,7 @@ export default function PracticePage() {
         ))}
 
         {loading && messages[messages.length - 1]?.role === "user" && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mr-8">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 mr-4 sm:mr-8">
             <div className="flex items-center gap-2">
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
               <span className="text-sm text-gray-500">Thinking...</span>
@@ -173,12 +173,12 @@ export default function PracticePage() {
         <div ref={chatEndRef} />
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex gap-2 sm:gap-3">
         <textarea
           value={userAnswer}
           onChange={(e) => setUserAnswer(e.target.value)}
           placeholder="Type your answer..."
-          className="flex-1 p-3 border border-gray-300 rounded-lg resize-none h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+          className="flex-1 p-3 border border-gray-300 rounded-lg resize-none h-20 sm:h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
           onKeyDown={(e) => {
             if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
               submitAnswer();
@@ -189,7 +189,7 @@ export default function PracticePage() {
         <button
           onClick={submitAnswer}
           disabled={!userAnswer.trim() || loading}
-          className="self-end bg-blue-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="self-end bg-blue-600 text-white px-4 sm:px-5 py-2.5 rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           Submit
         </button>

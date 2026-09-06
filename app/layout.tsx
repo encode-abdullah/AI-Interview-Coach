@@ -25,12 +25,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <nav className="border-b border-gray-200 bg-white">
+        <nav className="border-b border-gray-200 bg-white sticky top-0 z-50">
           <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-            <Link href="/" className="text-lg font-semibold text-gray-900">
-              Interview Prep Coach
+            <Link href="/" className="text-base sm:text-lg font-semibold text-gray-900">
+              <span className="hidden sm:inline">Interview Prep Coach</span>
+              <span className="sm:hidden">IPC</span>
             </Link>
-            <div className="flex gap-4 text-sm">
+            <div className="flex gap-3 sm:gap-4 text-sm">
               <Link href="/prep" className="text-gray-600 hover:text-gray-900">
                 Prep
               </Link>

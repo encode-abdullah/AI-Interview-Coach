@@ -1,36 +1,75 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Interview Prep Coach
 
-## Getting Started
+I built this because I was tired of Googling "common interview questions" and getting the same generic list every time. Every role is different — your prep should be too.
 
-First, run the development server:
+Paste a job description, and this tool generates tailored interview questions with structured STAR answers using AI.
+
+## What it does
+
+- Paste any job description (tech, design, marketing, anything)
+- AI generates 12-15 interview questions specific to that role
+- Each question comes with a structured STAR answer (Situation, Task, Action, Result)
+- Mock interview mode where you practice answering and get scored
+- Copy answers with one click for quick revision
+- Streaming responses — answers appear in real time
+
+## How I built it
+
+- **Next.js 16** with App Router and TypeScript
+- **Tailwind CSS** for styling
+- **Claude API** (Anthropic) for AI — streaming responses via Server-Sent Events
+- **Vercel** for deployment
+
+Honestly, the hardest part was getting streaming to work properly. The rest was straightforward.
+
+## Running it locally
+
+```bash
+git clone https://github.com/encode-abdullah/AI-Interview-Coach.git
+cd ai-interview-coach
+npm install
+```
+
+Create a `.env.local` file:
+
+```
+ANTHROPIC_API_KEY=your_key_here
+```
+
+Get your API key at [console.anthropic.com](https://console.anthropic.com) (free tier available).
+
+Then:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What I'd do differently
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Add user accounts so you can save your prep history
+- Voice-based mock interviews (speech-to-text)
+- Resume parsing to auto-fill job details
+- Support for multiple AI models (GPT, Gemini)
 
-## Learn More
+## Screenshots
 
-To learn more about Next.js, take a look at the following resources:
+*Landing page — clean, simple, gets to the point*
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+*Prep page — paste a JD, get questions streaming in real time*
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+*Mock interview — practice answering with AI feedback*
 
-## Deploy on Vercel
+## Tech decisions
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Choice | Why |
+|--------|-----|
+| Next.js over plain React | File routing, API routes, easy Vercel deploy |
+| Claude over GPT | Better at structured STAR answers, cleaner output |
+| Streaming over regular fetch | Way better UX — users see answers appearing |
+| Tailwind over CSS modules | Faster to build, consistent design |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+MIT

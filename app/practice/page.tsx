@@ -62,6 +62,8 @@ export default function PracticePage() {
 
       const decoder = new TextDecoder();
       let fullText = "";
+      let buffer = "";
+      let hasError = false;
 
       const aiMsg = { role: "ai" as const, content: "" };
       setMessages([...newMessages, aiMsg]);
@@ -70,25 +72,47 @@ export default function PracticePage() {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") break;
-            try {
-              const parsed = JSON.parse(data);
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.error) {
+              fullText = "Error: " + parsed.error;
+              setMessages([...newMessages, { role: "ai", content: fullText }]);
+              hasError = true;
+              break;
+            }
+            if (typeof parsed.text === "string") {
               fullText += parsed.text;
               setMessages([...newMessages, { role: "ai", content: fullText }]);
-            } catch {
-              // skip
             }
+          } catch {
+            // skip
           }
         }
+
+        if (hasError) break;
       }
 
-      setQuestionCount((c) => c + 1);
+      // Only increment question count on success
+      if (!hasError && fullText) {
+        setQuestionCount((c) => c + 1);
+      }
+      // If no text was received, show error
+      if (!fullText) {
+        setMessages([
+          ...newMessages,
+          { role: "ai", content: "Sorry, I couldn't generate a response. Please try again." },
+        ]);
+      }
     } catch {
       setMessages([
         ...newMessages,
@@ -114,6 +138,8 @@ export default function PracticePage() {
         </p>
 
         <textarea
+          id="practice-jd"
+          name="practice-jd"
           value={jobDescription}
           onChange={(e) => setJobDescription(e.target.value)}
           placeholder="Paste the job description here..."
@@ -137,9 +163,22 @@ export default function PracticePage() {
         <h1 className="text-2xl font-bold text-gray-900">
           Mock Interview
         </h1>
-        <span className="text-sm text-gray-500">
-          Question {questionCount}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-500">
+            Question {questionCount}
+          </span>
+          <button
+            onClick={() => {
+              setStarted(false);
+              setMessages([]);
+              setQuestionCount(0);
+              setUserAnswer("");
+            }}
+            className="text-xs text-gray-500 hover:text-gray-700 underline"
+          >
+            Start over
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3 mb-4 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto">
@@ -175,6 +214,8 @@ export default function PracticePage() {
 
       <div className="flex gap-2 sm:gap-3">
         <textarea
+          id="answer"
+          name="answer"
           value={userAnswer}
           onChange={(e) => setUserAnswer(e.target.value)}
           placeholder="Type your answer..."

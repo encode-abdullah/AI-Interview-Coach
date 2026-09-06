@@ -5,9 +5,6 @@ export default function Home() {
     <div>
       <div className="max-w-4xl mx-auto px-4 py-16 sm:py-24">
         <div className="text-center">
-          <p className="text-sm font-medium text-blue-600 mb-4">
-            Built with Claude AI
-          </p>
           <h1 className="text-4xl font-bold text-gray-900 sm:text-5xl tracking-tight">
             Stop Googling Interview Questions.
           </h1>

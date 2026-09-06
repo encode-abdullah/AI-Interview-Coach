@@ -1,10 +1,5 @@
 import { NextRequest } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
 import { buildQuestionsPrompt, buildMockInterviewPrompt } from "@/lib/prompts";
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,7 +20,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === "your_api_key_here") {
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID;
+
+    if (!apiKey || apiKey === "your_api_key_here") {
       return new Response(
         JSON.stringify({ error: "API key not configured. Add your Anthropic API key to .env.local" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
@@ -43,33 +41,78 @@ export async function POST(req: NextRequest) {
       prompt = buildQuestionsPrompt(jobDescription);
     }
 
-    const stream = await anthropic.messages.stream({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+    };
+
+    if (workspaceId) {
+      headers["anthropic-workspace-id"] = workspaceId;
+    }
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4096,
+        stream: true,
+        messages: [{ role: "user", content: prompt }],
+      }),
     });
 
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error("Anthropic API error:", response.status, errorData);
+      const msg = errorData?.error?.message || `API error: ${response.status}`;
+      return new Response(
+        JSON.stringify({ error: msg }),
+        { status: response.status, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Transform SSE stream from Anthropic to our format
     const encoder = new TextEncoder();
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error("No response body");
+
     const readable = new ReadableStream({
       async start(controller) {
+        const decoder = new TextDecoder();
+        let buffer = "";
+
         try {
-          for await (const event of stream) {
-            if (
-              event.type === "content_block_delta" &&
-              event.delta.type === "text_delta"
-            ) {
-              controller.enqueue(
-                encoder.encode(`data: ${JSON.stringify({ text: event.delta.text })}\n\n`)
-              );
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed || !trimmed.startsWith("data: ")) continue;
+              const data = trimmed.slice(6);
+              if (data === "[DONE]") continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
+                  const text = parsed.delta.text || "";
+                  if (text) {
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
+                  }
+                }
+              } catch {
+                // skip
+              }
             }
           }
           controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-        } catch (streamError) {
-          console.error("Stream error:", streamError);
-          const errorMsg = streamError instanceof Error ? streamError.message : "Stream failed";
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ error: errorMsg })}\n\n`)
-          );
+        } catch (err) {
+          console.error("Stream transform error:", err);
         } finally {
           controller.close();
         }
@@ -84,22 +127,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("API error:", error);
-
-    if (error instanceof Anthropic.AuthenticationError) {
-      return new Response(
-        JSON.stringify({ error: "Invalid API key. Check your ANTHROPIC_API_KEY in .env.local" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    if (error instanceof Anthropic.RateLimitError) {
-      return new Response(
-        JSON.stringify({ error: "Rate limited. Wait a minute and try again." }),
-        { status: 429, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
+    console.error("API route error:", error);
     return new Response(
       JSON.stringify({ error: "Something went wrong. Check your API key and try again." }),
       { status: 500, headers: { "Content-Type": "application/json" } }

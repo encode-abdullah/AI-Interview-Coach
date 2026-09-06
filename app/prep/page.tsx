@@ -49,27 +49,40 @@ export default function PrepPage() {
 
       const decoder = new TextDecoder();
       let fullText = "";
+      let buffer = "";
+      let hasError = false;
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
 
         for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.slice(6);
-            if (data === "[DONE]") break;
-            try {
-              const parsed = JSON.parse(data);
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.error) {
+              setError(parsed.error);
+              hasError = true;
+              break;
+            }
+            if (typeof parsed.text === "string") {
               fullText += parsed.text;
               setResult(fullText);
-            } catch {
-              // skip malformed chunks
             }
+          } catch {
+            // skip malformed chunks
           }
         }
+
+        if (hasError) break;
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === "AbortError") {
@@ -83,23 +96,60 @@ export default function PrepPage() {
   };
 
   const parseQuestions = (text: string) => {
-    const sections = text.split(/### Q\d+:/);
-    return sections
-      .filter((s) => s.trim())
-      .map((section) => {
-        const lines = section.trim().split("\n");
-        const question = lines[0]?.trim() || "";
-        const answer = lines
-          .slice(1)
+    const results: { question: string; answer: string }[] = [];
+
+    // Find lines that look like question headers
+    const lines = text.split("\n");
+    let currentQuestion = "";
+    let currentAnswer: string[] = [];
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      // Check if this line is a question header
+      const isQuestion =
+        /^###\s*Q\d+/i.test(trimmed) ||
+        /^\*\*Q\d+/i.test(trimmed) ||
+        /^Q\d+[\.:]/i.test(trimmed) ||
+        /^\d+[\.\)]\s+\S/.test(trimmed);
+
+      if (isQuestion) {
+        // Save previous question if exists
+        if (currentQuestion) {
+          results.push({
+            question: currentQuestion,
+            answer: currentAnswer.join("\n").trim(),
+          });
+        }
+        // Extract question text — remove markers
+        currentQuestion = trimmed
+          .replace(/^###\s*/i, "")
+          .replace(/^\*\*/g, "")
+          .replace(/^Q\d+[\.:]\s*/i, "")
+          .replace(/^\d+[\.\)]\s+/, "")
+          .replace(/\*\*$/g, "")
+          .trim();
+        currentAnswer = [];
+      } else if (currentQuestion && trimmed) {
+        currentAnswer.push(line);
+      }
+    }
+
+    // Save last question
+    if (currentQuestion) {
+      results.push({
+        question: currentQuestion,
+        answer: currentAnswer
           .join("\n")
           .replace(/\*\*Answer:\*\*/g, "")
           .replace(/\*\*Situation:\*\*/g, "Situation:")
           .replace(/\*\*Task:\*\*/g, "Task:")
           .replace(/\*\*Action:\*\*/g, "Action:")
           .replace(/\*\*Result:\*\*/g, "Result:")
-          .trim();
-        return { question, answer };
+          .trim(),
       });
+    }
+
+    return results.filter((q) => q.question.length > 3);
   };
 
   const questions = result ? parseQuestions(result) : [];
@@ -116,6 +166,8 @@ export default function PrepPage() {
 
       <div className="mb-6">
         <textarea
+          id="job-description"
+          name="job-description"
           value={jobDescription}
           onChange={(e) => setJobDescription(e.target.value)}
           placeholder="Paste the job description here..."
@@ -159,11 +211,13 @@ export default function PrepPage() {
           {questions.length > 0 ? (
             <div className="space-y-3">
               {questions.map((q, i) => (
-                <QuestionCard key={i} question={q.question} answer={q.answer} index={i + 1} />
+                q.question ? (
+                  <QuestionCard key={i} question={q.question} answer={q.answer || "No answer provided"} index={i + 1} />
+                ) : null
               ))}
             </div>
           ) : (
-            <div className="border border-gray-200 rounded-lg p-5 bg-white whitespace-pre-line text-sm leading-relaxed">
+            <div className="border border-gray-200 rounded-lg p-5 bg-white whitespace-pre-line text-sm leading-relaxed text-gray-700">
               {result}
             </div>
           )}

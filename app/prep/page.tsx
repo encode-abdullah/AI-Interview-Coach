@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import QuestionCard from "@/components/QuestionCard";
 import CopyButton from "@/components/CopyButton";
+import { GradientWave } from "@/components/ui/gradient-wave";
 
 export default function PrepPage() {
   const [jobDescription, setJobDescription] = useState("");
@@ -155,80 +156,87 @@ export default function PrepPage() {
   const questions = result ? parseQuestions(result) : [];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">
-        Interview Prep
-      </h1>
-      <p className="text-gray-600 mb-6">
-        Paste the job description below and get tailored interview questions
-        with STAR-format answers.
-      </p>
+    <div className="relative min-h-screen">
+      <GradientWave
+        colors={["#0a0a0a", "#1a1030", "#0f0a1a", "#1a1030", "#0a0a0a", "#1a1030"]}
+        shadowPower={8}
+        darkenTop={false}
+      />
+      <div className="relative z-10 max-w-4xl mx-auto px-4 py-10">
+        <h1 className="text-2xl font-bold text-white mb-2">
+          Interview Prep
+        </h1>
+        <p className="text-gray-400 mb-6">
+          Paste the job description below and get tailored interview questions
+          with STAR-format answers.
+        </p>
 
-      <div className="mb-6">
-        <textarea
-          id="job-description"
-          name="job-description"
-          value={jobDescription}
-          onChange={(e) => setJobDescription(e.target.value)}
-          placeholder="Paste the job description here..."
-          className="w-full h-40 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-        />
-      </div>
-
-      {error && (
-        <p className="text-red-600 text-sm mb-4">{error}</p>
-      )}
-
-      <button
-        onClick={handleGenerate}
-        className={`px-6 py-3 rounded-lg font-medium transition-colors ${
-          loading
-            ? "bg-red-600 text-white hover:bg-red-700"
-            : "bg-blue-600 text-white hover:bg-blue-700"
-        }`}
-      >
-        {loading ? "Stop generating" : "Generate Questions"}
-      </button>
-
-      {loading && !result && (
-        <div className="mt-8 text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="text-sm text-gray-500 mt-2">
-            AI is analyzing the job description...
-          </p>
+        <div className="mb-6">
+          <textarea
+            id="job-description"
+            name="job-description"
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            placeholder="Paste the job description here..."
+            className="w-full h-40 p-4 border border-white/10 bg-white/5 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm text-white placeholder-gray-500"
+          />
         </div>
-      )}
 
-      {result && (
-        <div className="mt-10">
-          <div className="flex items-center justify-between mb-4 gap-2">
-            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-              Your Interview Questions
-            </h2>
-            <CopyButton text={result} />
+        {error && (
+          <p className="text-red-400 text-sm mb-4">{error}</p>
+        )}
+
+        <button
+          onClick={handleGenerate}
+          className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+            loading
+              ? "bg-red-600 text-white hover:bg-red-700"
+              : "bg-white text-black hover:bg-gray-200"
+          }`}
+        >
+          {loading ? "Stop generating" : "Generate Questions"}
+        </button>
+
+        {loading && !result && (
+          <div className="mt-8 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
+            <p className="text-sm text-gray-400 mt-2">
+              AI is analyzing the job description...
+            </p>
           </div>
+        )}
 
-          {questions.length > 0 ? (
-            <div className="space-y-3">
-              {questions.map((q, i) => (
-                q.question ? (
-                  <QuestionCard key={i} question={q.question} answer={q.answer || "No answer provided"} index={i + 1} />
-                ) : null
-              ))}
+        {result && (
+          <div className="mt-10">
+            <div className="flex items-center justify-between mb-4 gap-2">
+              <h2 className="text-lg sm:text-xl font-semibold text-white">
+                Your Interview Questions
+              </h2>
+              <CopyButton text={result} />
             </div>
-          ) : (
-            <div className="border border-gray-200 rounded-lg p-5 bg-white whitespace-pre-line text-sm leading-relaxed text-gray-700">
-              {result}
-            </div>
-          )}
-        </div>
-      )}
 
-      {!loading && !result && (
-        <div className="mt-10 text-center text-gray-400">
-          <p className="text-sm">Your questions will appear here</p>
-        </div>
-      )}
+            {questions.length > 0 ? (
+              <div className="space-y-3">
+                {questions.map((q, i) => (
+                  q.question ? (
+                    <QuestionCard key={i} question={q.question} answer={q.answer || "No answer provided"} index={i + 1} />
+                  ) : null
+                ))}
+              </div>
+            ) : (
+              <div className="border border-white/10 rounded-lg p-5 bg-white/5 whitespace-pre-line text-sm leading-relaxed text-gray-300">
+                {result}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!loading && !result && (
+          <div className="mt-10 text-center text-gray-500">
+            <p className="text-sm">Your questions will appear here</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

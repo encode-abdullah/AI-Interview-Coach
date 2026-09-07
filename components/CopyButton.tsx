@@ -16,7 +16,6 @@ export default function CopyButton({ text }: CopyButtonProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // fallback
       const textarea = document.createElement("textarea");
       textarea.value = text;
       document.body.appendChild(textarea);
@@ -31,7 +30,7 @@ export default function CopyButton({ text }: CopyButtonProps) {
   return (
     <button
       onClick={handleCopy}
-      className="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1"
+      className="text-xs text-purple-400 hover:text-purple-300 font-medium flex items-center gap-1"
     >
       {copied ? (
         <>

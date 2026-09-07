@@ -13,15 +13,15 @@ export default function QuestionCard({ question, answer, index }: QuestionCardPr
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className={`border rounded-lg bg-white overflow-hidden transition-colors ${expanded ? "border-blue-200" : "border-gray-200"}`}>
+    <div className={`border rounded-lg overflow-hidden transition-colors ${expanded ? "border-purple-500/30 bg-white/5" : "border-white/10 bg-white/5"}`}>
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full text-left p-4 sm:p-5 flex items-start gap-3 hover:bg-gray-50 transition-colors"
+        className="w-full text-left p-4 sm:p-5 flex items-start gap-3 hover:bg-white/5 transition-colors"
       >
-        <span className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-blue-100 text-blue-700 text-xs sm:text-sm font-medium flex items-center justify-center">
+        <span className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-purple-500/20 text-purple-300 text-xs sm:text-sm font-medium flex items-center justify-center">
           {index}
         </span>
-        <span className="font-medium text-gray-900 flex-1 text-sm sm:text-base leading-snug">{question}</span>
+        <span className="font-medium text-white flex-1 text-sm sm:text-base leading-snug">{question}</span>
         <svg
           className={`w-4 h-4 sm:w-5 sm:h-5 text-gray-400 flex-shrink-0 mt-1 transition-transform ${expanded ? "rotate-180" : ""}`}
           fill="none"
@@ -33,12 +33,12 @@ export default function QuestionCard({ question, answer, index }: QuestionCardPr
       </button>
 
       {expanded && (
-        <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-gray-100">
+        <div className="px-4 sm:px-5 pb-4 sm:pb-5 border-t border-white/10">
           <div className="mt-3 flex items-center justify-between">
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">STAR Answer</span>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">STAR Answer</span>
             <CopyButton text={answer} />
           </div>
-          <div className="mt-3 text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+          <div className="mt-3 text-sm text-gray-300 leading-relaxed whitespace-pre-line">
             {answer}
           </div>
         </div>

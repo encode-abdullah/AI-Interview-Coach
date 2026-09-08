@@ -26,12 +26,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <nav className="border-b border-white/10 bg-black/80 backdrop-blur-md sticky top-0 z-50">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div id="layout-nav-inner" className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
             <Link href="/" className="text-base sm:text-lg font-semibold text-white">
               <span className="hidden sm:inline">Interview Prep Coach</span>
               <span className="sm:hidden">IPC</span>
             </Link>
-            <div className="flex gap-3 sm:gap-4 text-sm">
+            <div id="layout-nav-links" className="flex gap-3 sm:gap-4 text-sm">
               <Link href="/prep" className="text-gray-400 hover:text-white transition-colors">
                 Prep
               </Link>
@@ -51,7 +51,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         </nav>
         <main className="flex-1">{children}</main>
         <footer className="border-t border-white/10 bg-black py-4 text-center text-xs text-gray-500">
-          Built with Next.js + Claude AI
+          Follow github.com/encode-abdullah
         </footer>
       </body>
     </html>

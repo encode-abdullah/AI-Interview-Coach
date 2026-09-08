@@ -129,13 +129,13 @@ export default function PracticePage() {
 
   if (!started) {
     return (
-      <div className="relative min-h-screen">
+      <div id="practice-start-root" className="relative min-h-screen">
         <GradientWave
           colors={["#0a0a0a", "#1a1030", "#0f0a1a", "#1a1030", "#0a0a0a", "#1a1030"]}
           shadowPower={8}
           darkenTop={false}
         />
-        <div className="relative z-10 max-w-4xl mx-auto px-4 py-10">
+        <div id="practice-start-content" className="relative z-10 max-w-4xl mx-auto px-4 py-10">
           <h1 className="text-2xl font-bold text-white mb-2">
             Mock Interview
           </h1>
@@ -166,18 +166,18 @@ export default function PracticePage() {
   }
 
   return (
-    <div className="relative min-h-screen">
+    <div id="practice-active-root" className="relative min-h-screen">
       <GradientWave
         colors={["#0a0a0a", "#1a1030", "#0f0a1a", "#1a1030", "#0a0a0a", "#1a1030"]}
         shadowPower={8}
         darkenTop={false}
       />
-      <div className="relative z-10 max-w-4xl mx-auto px-4 py-10">
-        <div className="flex items-center justify-between mb-6">
+      <div id="practice-active-content" className="relative z-10 max-w-4xl mx-auto px-4 py-10">
+        <div id="practice-header" className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">
             Mock Interview
           </h1>
-          <div className="flex items-center gap-3">
+          <div id="practice-header-controls" className="flex items-center gap-3">
             <span className="text-sm text-gray-400">
               Question {questionCount}
             </span>
@@ -195,9 +195,10 @@ export default function PracticePage() {
           </div>
         </div>
 
-        <div className="space-y-3 mb-4 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto">
+        <div id="practice-chat-scroll" className="space-y-3 mb-4 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto">
           {messages.map((msg, i) => (
             <div
+              id="practice-message"
               key={i}
               className={`p-3 sm:p-4 rounded-lg ${
                 msg.role === "user"
@@ -208,25 +209,25 @@ export default function PracticePage() {
               <p className="text-xs font-medium text-gray-400 mb-1">
                 {msg.role === "user" ? "You" : "Coach"}
               </p>
-              <div className="text-sm text-gray-200 whitespace-pre-line leading-relaxed">
+              <div id="practice-message-content" className="text-sm text-gray-200 whitespace-pre-line leading-relaxed">
                 {msg.content}
               </div>
             </div>
           ))}
 
           {loading && messages[messages.length - 1]?.role === "user" && (
-            <div className="bg-white/5 border border-white/10 rounded-lg p-3 sm:p-4 mr-4 sm:mr-8">
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
+            <div id="practice-loading-message" className="bg-white/5 border border-white/10 rounded-lg p-3 sm:p-4 mr-4 sm:mr-8">
+              <div id="practice-loading-inner" className="flex items-center gap-2">
+                <div id="practice-spinner" className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
                 <span className="text-sm text-gray-400">Thinking...</span>
               </div>
             </div>
           )}
 
-          <div ref={chatEndRef} />
+          <div id="practice-chat-end" ref={chatEndRef} />
         </div>
 
-        <div className="flex gap-2 sm:gap-3">
+        <div id="practice-input-form" className="flex gap-2 sm:gap-3">
           <textarea
             id="answer"
             name="answer"

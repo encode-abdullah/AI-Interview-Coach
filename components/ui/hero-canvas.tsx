@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { ArrowRight, Zap } from "lucide-react";
 import Link from "next/link";
 
@@ -164,7 +164,7 @@ const AetherFlowHero = () => {
     };
   }, []);
 
-  const fadeUpVariants = {
+  const fadeUpVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     visible: (i: number) => ({
       opacity: 1,
@@ -172,29 +172,16 @@ const AetherFlowHero = () => {
       transition: {
         delay: i * 0.2 + 0.5,
         duration: 0.8,
-        ease: "easeInOut",
+        ease: "easeInOut" as const,
       },
     }),
   };
 
   return (
-    <div className="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden">
+    <div id="hero-root" className="relative h-screen w-full flex flex-col items-center justify-center overflow-hidden">
       <canvas ref={canvasRef} className="absolute top-0 left-0 w-full h-full"></canvas>
 
-      <div className="relative z-10 text-center p-6">
-        <motion.div
-          custom={0}
-          variants={fadeUpVariants}
-          initial="hidden"
-          animate="visible"
-          className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 mb-6 backdrop-blur-sm"
-        >
-          <Zap className="h-4 w-4 text-purple-400" />
-          <span className="text-sm font-medium text-gray-200">
-            AI-Powered Interview Prep
-          </span>
-        </motion.div>
-
+      <div id="hero-content" className="relative z-10 text-center p-6">
         <motion.h1
           custom={1}
           variants={fadeUpVariants}
@@ -216,6 +203,7 @@ const AetherFlowHero = () => {
         </motion.p>
 
         <motion.div
+          id="hero-actions"
           custom={3}
           variants={fadeUpVariants}
           initial="hidden"

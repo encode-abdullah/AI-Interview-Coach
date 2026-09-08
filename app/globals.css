@@ -27,3 +27,7 @@ body {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
 }
+
+#layout-nav-inner{
+  background: linear-gradient(45deg, #0e0e0e7a, #644587, #0e0e0e7a);
+}

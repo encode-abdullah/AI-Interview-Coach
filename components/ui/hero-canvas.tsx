@@ -210,12 +210,12 @@ const AetherFlowHero = () => {
           variants={fadeUpVariants}
           initial="hidden"
           animate="visible"
-          className="flex gap-4 justify-center items-center"
+          className="mock-interview flex gap-4 justify-center items-center"
         >
-          <div id="hero-btn-prep" onClick={() => router.push("/prep")} className="cursor-pointer">
+          <div onClick={() => router.push("/prep")} className="cursor-pointer">
             <FlowButton text="Start Preparing" />
           </div>
-          <div id="hero-btn-practice" onClick={() => router.push("/practice")} className="cursor-pointer">
+          <div onClick={() => router.push("/practice")} className="cursor-pointer">
             <LiquidMetalButton label="Mock Interview" />
           </div>
         </motion.nav>

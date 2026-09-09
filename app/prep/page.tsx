@@ -96,38 +96,60 @@ export default function PrepPage() {
     }
   };
 
+  const cleanAnswer = (raw: string): string => {
+    return raw
+      .replace(/\*\*Answer:\*\*/gi, "")
+      .replace(/\*\*Situation:\*\*/gi, "**Situation:**")
+      .replace(/\*\*Task:\*\*/gi, "**Task:**")
+      .replace(/\*\*Action:\*\*/gi, "**Action:**")
+      .replace(/\*\*Result:\*\*/gi, "**Result:**")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  };
+
   const parseQuestions = (text: string) => {
     const results: { question: string; answer: string }[] = [];
 
-    // Find lines that look like question headers
     const lines = text.split("\n");
     let currentQuestion = "";
     let currentAnswer: string[] = [];
 
+    const pushQuestion = () => {
+      if (currentQuestion) {
+        results.push({
+          question: currentQuestion,
+          answer: cleanAnswer(currentAnswer.join("\n")),
+        });
+      }
+    };
+
     for (const line of lines) {
       const trimmed = line.trim();
-      // Check if this line is a question header
+
+      // Match various Q header formats from Gemini/LLMs
       const isQuestion =
-        /^###\s*Q\d+/i.test(trimmed) ||
-        /^\*\*Q\d+/i.test(trimmed) ||
-        /^Q\d+[\.:]/i.test(trimmed) ||
-        /^\d+[\.\)]\s+\S/.test(trimmed);
+        /^#{1,4}\s*Q?\d+[\.:)]/i.test(trimmed) ||
+        /^\*\*Q?\d+[\.:)]/i.test(trimmed) ||
+        /^Q\d+[\.:)]\s/i.test(trimmed) ||
+        /^\d+[\.\)]\s+.{10,}/.test(trimmed);
+
+      // Also detect non-question headers like "## Questions" or "---" separators — skip them
+      if (/^#{1,3}\s+(Questions|Quick Tip|Summary)/i.test(trimmed)) {
+        pushQuestion();
+        currentQuestion = "";
+        currentAnswer = [];
+        continue;
+      }
+      if (/^---+\s*$/.test(trimmed)) continue;
 
       if (isQuestion) {
-        // Save previous question if exists
-        if (currentQuestion) {
-          results.push({
-            question: currentQuestion,
-            answer: currentAnswer.join("\n").trim(),
-          });
-        }
-        // Extract question text — remove markers
+        pushQuestion();
         currentQuestion = trimmed
-          .replace(/^###\s*/i, "")
+          .replace(/^#{1,4}\s*/i, "")
           .replace(/^\*\*/g, "")
-          .replace(/^Q\d+[\.:]\s*/i, "")
-          .replace(/^\d+[\.\)]\s+/, "")
           .replace(/\*\*$/g, "")
+          .replace(/^Q?\d+[\.:)]\s*/i, "")
+          .replace(/^\d+[\.\)]\s+/, "")
           .trim();
         currentAnswer = [];
       } else if (currentQuestion && trimmed) {
@@ -135,43 +157,30 @@ export default function PrepPage() {
       }
     }
 
-    // Save last question
-    if (currentQuestion) {
-      results.push({
-        question: currentQuestion,
-        answer: currentAnswer
-          .join("\n")
-          .replace(/\*\*Answer:\*\*/g, "")
-          .replace(/\*\*Situation:\*\*/g, "Situation:")
-          .replace(/\*\*Task:\*\*/g, "Task:")
-          .replace(/\*\*Action:\*\*/g, "Action:")
-          .replace(/\*\*Result:\*\*/g, "Result:")
-          .trim(),
-      });
-    }
-
-    return results.filter((q) => q.question.length > 3);
+    pushQuestion();
+    return results.filter((q) => q.question.length > 5);
   };
 
   const questions = result ? parseQuestions(result) : [];
 
   return (
-    <div id="prep-root" className="relative min-h-screen">
+    <main id="prep-root" className="relative min-h-screen">
       <GradientWave
         colors={["#0a0a0a", "#1a1030", "#0f0a1a", "#1a1030", "#0a0a0a", "#1a1030"]}
         shadowPower={8}
         darkenTop={false}
       />
-      <div id="prep-content" className="relative z-10 max-w-4xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold text-white mb-2">
-          Interview Prep
-        </h1>
-        <p className="text-gray-400 mb-6">
-          Paste the job description below and get tailored interview questions
-          with STAR-format answers.
-        </p>
+      <section id="prep-content" className="relative z-10 max-w-4xl mx-auto px-4 py-10">
+        <header id="prep-header">
+          <h1 id="prep-title" className="text-2xl font-bold text-white mb-2">
+            Interview Preparation
+          </h1>
+          <p id="prep-description" className="text-gray-400 mb-6">
+            Paste the job description below and get STAR-format answers.
+          </p>
+        </header>
 
-        <div id="prep-input-group" className="mb-6">
+        <form id="prep-input-group" className="mb-6" onSubmit={(e) => { e.preventDefault(); handleGenerate(); }}>
           <textarea
             id="job-description"
             name="job-description"
@@ -180,13 +189,14 @@ export default function PrepPage() {
             placeholder="Paste the job description here..."
             className="w-full h-40 p-4 border border-white/10 bg-white/5 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm text-white placeholder-gray-500"
           />
-        </div>
+        </form>
 
         {error && (
-          <p className="text-red-400 text-sm mb-4">{error}</p>
+          <p id="prep-error" className="text-red-400 text-sm mb-4" role="alert">{error}</p>
         )}
 
         <button
+          id="prep-generate-btn"
           onClick={handleGenerate}
           className={`px-6 py-3 rounded-lg font-medium transition-colors ${
             loading
@@ -194,49 +204,51 @@ export default function PrepPage() {
               : "bg-white text-black hover:bg-gray-200"
           }`}
         >
-          {loading ? "Stop generating" : "Generate Questions"}
+          {loading ? "Cease Response" : "Generate Response"}
         </button>
 
         {loading && !result && (
-          <div id="prep-loading" className="mt-8 text-center">
+          <aside id="prep-loading" className="mt-8 text-center">
             <div id="prep-spinner" className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
-            <p className="text-sm text-gray-400 mt-2">
-              AI is analyzing the job description...
+            <p id="prep-loading-text" className="text-sm text-gray-400 mt-2">
+              Analyzing job description...
             </p>
-          </div>
+          </aside>
         )}
 
         {result && (
-          <div id="prep-results" className="mt-10">
-            <div id="prep-results-header" className="flex items-center justify-between mb-4 gap-2">
-              <h2 className="text-lg sm:text-xl font-semibold text-white">
-                Your Interview Questions
+          <section id="prep-results" className="mt-10">
+            <header id="prep-results-header" className="flex items-center justify-between mb-4 gap-2">
+              <h2 id="prep-results-title" className="text-lg sm:text-xl font-semibold text-white">
+                Interview Questions
               </h2>
               <CopyButton text={result} />
-            </div>
+            </header>
 
             {questions.length > 0 ? (
-              <div id="prep-questions-list" className="space-y-3">
+              <ul id="prep-questions-list" className="space-y-3 list-none p-0 m-0">
                 {questions.map((q, i) => (
                   q.question ? (
-                    <QuestionCard key={i} question={q.question} answer={q.answer || "No answer provided"} index={i + 1} />
+                    <li id={`prep-question-${i}`} key={i}>
+                      <QuestionCard question={q.question} answer={q.answer || "No answer provided"} index={i + 1} />
+                    </li>
                   ) : null
                 ))}
-              </div>
+              </ul>
             ) : (
-              <div id="prep-fallback" className="border border-white/10 rounded-lg p-5 bg-white/5 whitespace-pre-line text-sm leading-relaxed text-gray-300">
+              <pre id="prep-fallback" className="border border-white/10 rounded-lg p-5 bg-white/5 whitespace-pre-line text-sm leading-relaxed text-gray-300 font-sans">
                 {result}
-              </div>
+              </pre>
             )}
-          </div>
+          </section>
         )}
 
         {!loading && !result && (
-          <div id="prep-empty-state" className="mt-10 text-center text-gray-500">
-            <p className="text-sm">Your questions will appear here</p>
-          </div>
+          <aside id="prep-empty-state" className="mt-10 text-center text-gray-500">
+            <p id="prep-empty-text" className="text-sm">Your questions will appear here</p>
+          </aside>
         )}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

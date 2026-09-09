@@ -3,24 +3,21 @@ export function buildQuestionsPrompt(jobDescription: string): string {
 
 I'm going to give you a job description. Your job is to help me prepare for interviews at this company.
 
-Please do the following:
+Generate EXACTLY 10 interview questions. These should be the most commonly asked questions for this type of role. Include:
+- 4 behavioral questions ("tell me about a time" — these are the most frequently asked in real interviews)
+- 3 technical or role-specific questions based on the JD requirements
+- 2 culture fit or general questions
+- 1 curveball or strengths-based question
 
-1. Generate 12-15 interview questions that a candidate is likely to face. Include:
-   - 4-5 behavioral questions (the "tell me about a time" kind)
-   - 4-5 technical or role-specific questions
-   - 2-3 culture fit or general questions
+For EACH of the 10 questions, provide a strong sample answer using the STAR format:
+- **Situation:** Set the context (1-2 sentences)
+- **Task:** What was your responsibility (1 sentence)
+- **Action:** What you specifically did (2-3 sentences, be specific with tools/technologies)
+- **Result:** The outcome, ideally with numbers (1-2 sentences)
 
-2. For each question, provide a strong sample answer using the STAR format:
-   - Situation: Set the context
-   - Task: What was your responsibility
-   - Action: What you specifically did
-   - Result: The outcome, ideally with numbers
+IMPORTANT: Do NOT skip any questions. All 10 questions must have complete STAR answers.
 
-3. After all questions, give me a quick tip on what this company likely values based on the JD.
-
-Format your response exactly like this:
-
-## Questions
+Format your response EXACTLY like this (do not use any other formatting):
 
 ### Q1: [question]
 **Answer:**
@@ -30,12 +27,13 @@ Format your response exactly like this:
 **Result:** ...
 
 ### Q2: [question]
-...and so on.
+**Answer:**
+**Situation:** ...
+**Task:** ...
+**Action:** ...
+**Result:** ...
 
----
-
-## Quick Tip
-[Your observation about what this company values]
+(continue for all 10 questions)
 
 Job Description:
 ${jobDescription}`;

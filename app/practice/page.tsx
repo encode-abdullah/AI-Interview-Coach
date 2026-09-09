@@ -103,11 +103,9 @@ export default function PracticePage() {
         if (hasError) break;
       }
 
-      // Only increment question count on success
       if (!hasError && fullText) {
         setQuestionCount((c) => c + 1);
       }
-      // If no text was received, show error
       if (!fullText) {
         setMessages([
           ...newMessages,
@@ -129,59 +127,64 @@ export default function PracticePage() {
 
   if (!started) {
     return (
-      <div id="practice-start-root" className="relative min-h-screen">
+      <main id="practice-start-root" className="relative min-h-screen">
         <GradientWave
           colors={["#0a0a0a", "#1a1030", "#0f0a1a", "#1a1030", "#0a0a0a", "#1a1030"]}
           shadowPower={8}
           darkenTop={false}
         />
-        <div id="practice-start-content" className="relative z-10 max-w-4xl mx-auto px-4 py-10">
-          <h1 className="text-2xl font-bold text-white mb-2">
-            Mock Interview
-          </h1>
-          <p className="text-gray-400 mb-6">
-            Practice answering interview questions. Paste the job description
-            and I&apos;ll conduct a mock interview, scoring your answers as we go.
-          </p>
+        <section id="practice-start-content" className="relative z-10 max-w-4xl mx-auto px-4 py-10">
+          <header id="practice-start-header">
+            <h1 id="practice-start-title" className="text-2xl font-bold text-white mb-2">
+              Mock Interview
+            </h1>
+            <p id="practice-start-description" className="text-gray-400 mb-6">
+              Paste the job description to conduct a mock interview.
+            </p>
+          </header>
 
-          <textarea
-            id="practice-jd"
-            name="practice-jd"
-            value={jobDescription}
-            onChange={(e) => setJobDescription(e.target.value)}
-            placeholder="Paste the job description here..."
-            className="w-full h-40 p-4 border border-white/10 bg-white/5 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm text-white placeholder-gray-500 mb-4"
-          />
+          <form id="practice-start-form" onSubmit={(e) => { e.preventDefault(); startInterview(); }}>
+            <textarea
+              id="practice-jd"
+              name="practice-jd"
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              placeholder="Paste the job description here..."
+              className="w-full h-40 p-4 border border-white/10 bg-white/5 rounded-lg resize-none focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-sm text-white placeholder-gray-500 mb-4"
+            />
 
-          <button
-            onClick={startInterview}
-            disabled={!jobDescription.trim()}
-            className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Start Interview
-          </button>
-        </div>
-      </div>
+            <button
+              id="practice-start-btn"
+              type="submit"
+              disabled={!jobDescription.trim()}
+              className="bg-white text-black px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Start Interview
+            </button>
+          </form>
+        </section>
+      </main>
     );
   }
 
   return (
-    <div id="practice-active-root" className="relative min-h-screen">
+    <main id="practice-active-root" className="relative min-h-screen">
       <GradientWave
         colors={["#0a0a0a", "#1a1030", "#0f0a1a", "#1a1030", "#0a0a0a", "#1a1030"]}
         shadowPower={8}
         darkenTop={false}
       />
-      <div id="practice-active-content" className="relative z-10 max-w-4xl mx-auto px-4 py-10">
-        <div id="practice-header" className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-white">
+      <section id="practice-active-content" className="relative z-10 max-w-4xl mx-auto px-4 py-10">
+        <header id="practice-header" className="flex items-center justify-between mb-6">
+          <h1 id="practice-active-title" className="text-2xl font-bold text-white">
             Mock Interview
           </h1>
-          <div id="practice-header-controls" className="flex items-center gap-3">
-            <span className="text-sm text-gray-400">
+          <nav id="practice-header-controls" className="flex items-center gap-3">
+            <span id="practice-question-count" className="text-sm text-gray-400">
               Question {questionCount}
             </span>
             <button
+              id="practice-start-over-btn"
               onClick={() => {
                 setStarted(false);
                 setMessages([]);
@@ -192,13 +195,13 @@ export default function PracticePage() {
             >
               Start over
             </button>
-          </div>
-        </div>
+          </nav>
+        </header>
 
-        <div id="practice-chat-scroll" className="space-y-3 mb-4 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto">
+        <ul id="practice-chat-scroll" className="space-y-3 mb-4 max-h-[55vh] sm:max-h-[60vh] overflow-y-auto list-none p-0 m-0" role="log" aria-live="polite">
           {messages.map((msg, i) => (
-            <div
-              id="practice-message"
+            <li
+              id={`practice-message-${i}`}
               key={i}
               className={`p-3 sm:p-4 rounded-lg ${
                 msg.role === "user"
@@ -206,28 +209,41 @@ export default function PracticePage() {
                   : "bg-white/5 border border-white/10 mr-4 sm:mr-8"
               }`}
             >
-              <p className="text-xs font-medium text-gray-400 mb-1">
+              <p id={`practice-message-role-${i}`} className="text-xs font-medium text-gray-400 mb-1">
                 {msg.role === "user" ? "You" : "Coach"}
               </p>
-              <div id="practice-message-content" className="text-sm text-gray-200 whitespace-pre-line leading-relaxed">
-                {msg.content}
-              </div>
-            </div>
+              <article id={`practice-message-content-${i}`} className="text-sm text-gray-200 leading-relaxed">
+                {msg.content.split("\n").map((line, li) => {
+                  if (!line.trim()) return <br key={li} />;
+                  const parts = line.split(/(\*\*[^*]+\*\*)/g);
+                  return (
+                    <span key={li} className="block mb-1">
+                      {parts.map((part, pi) => {
+                        if (part.startsWith("**") && part.endsWith("**")) {
+                          return <strong key={pi} className="text-white font-semibold">{part.slice(2, -2)}</strong>;
+                        }
+                        return <span key={pi}>{part}</span>;
+                      })}
+                    </span>
+                  );
+                })}
+              </article>
+            </li>
           ))}
 
           {loading && messages[messages.length - 1]?.role === "user" && (
-            <div id="practice-loading-message" className="bg-white/5 border border-white/10 rounded-lg p-3 sm:p-4 mr-4 sm:mr-8">
+            <li id="practice-loading-message" className="bg-white/5 border border-white/10 rounded-lg p-3 sm:p-4 mr-4 sm:mr-8">
               <div id="practice-loading-inner" className="flex items-center gap-2">
                 <div id="practice-spinner" className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-400"></div>
-                <span className="text-sm text-gray-400">Thinking...</span>
+                <span id="practice-loading-text" className="text-sm text-gray-400">Thinking...</span>
               </div>
-            </div>
+            </li>
           )}
 
           <div id="practice-chat-end" ref={chatEndRef} />
-        </div>
+        </ul>
 
-        <div id="practice-input-form" className="flex gap-2 sm:gap-3">
+        <form id="practice-input-form" className="flex gap-2 sm:gap-3" onSubmit={(e) => { e.preventDefault(); submitAnswer(); }}>
           <textarea
             id="answer"
             name="answer"
@@ -243,17 +259,18 @@ export default function PracticePage() {
             disabled={loading}
           />
           <button
-            onClick={submitAnswer}
+            id="practice-submit-btn"
+            type="submit"
             disabled={!userAnswer.trim() || loading}
             className="self-end bg-white text-black px-4 sm:px-5 py-2.5 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             Submit
           </button>
-        </div>
-        <p className="text-xs text-gray-500 mt-1">
+        </form>
+        <p id="practice-hint" className="text-xs text-gray-500 mt-1">
           Press Ctrl+Enter to submit
         </p>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

@@ -20,12 +20,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    const workspaceId = process.env.ANTHROPIC_WORKSPACE_ID;
+    const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey || apiKey === "your_api_key_here") {
       return new Response(
-        JSON.stringify({ error: "API key not configured. Add your Anthropic API key to .env.local" }),
+        JSON.stringify({ error: "API key not configured. Add your Gemini API key to .env.local" }),
         { status: 500, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -41,38 +40,41 @@ export async function POST(req: NextRequest) {
       prompt = buildQuestionsPrompt(jobDescription);
     }
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    };
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=${apiKey}`;
 
-    if (workspaceId) {
-      headers["anthropic-workspace-id"] = workspaceId;
-    }
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch(url, {
       method: "POST",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
-        max_tokens: 4096,
-        stream: true,
-        messages: [{ role: "user", content: prompt }],
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          maxOutputTokens: 16384,
+        },
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error("Anthropic API error:", response.status, errorData);
-      const msg = errorData?.error?.message || `API error: ${response.status}`;
+      console.error("Gemini API error:", response.status, errorData);
+
+      let msg = `API error: ${response.status}`;
+      if (errorData?.error?.message) {
+        msg = errorData.error.message;
+      } else if (response.status === 400) {
+        msg = "Invalid request. Check your API key and try again.";
+      } else if (response.status === 403) {
+        msg = "API key invalid or quota exceeded. Check your Gemini API key.";
+      } else if (response.status === 429) {
+        msg = "Rate limit exceeded. Wait a moment and try again.";
+      }
+
       return new Response(
         JSON.stringify({ error: msg }),
         { status: response.status, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    // Transform SSE stream from Anthropic to our format
+    // Transform Gemini streaming response to our SSE format
     const encoder = new TextEncoder();
     const reader = response.body?.getReader();
     if (!reader) throw new Error("No response body");
@@ -99,14 +101,12 @@ export async function POST(req: NextRequest) {
 
               try {
                 const parsed = JSON.parse(data);
-                if (parsed.type === "content_block_delta" && parsed.delta?.type === "text_delta") {
-                  const text = parsed.delta.text || "";
-                  if (text) {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
-                  }
+                const text = parsed?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text })}\n\n`));
                 }
               } catch {
-                // skip
+                // skip malformed chunks
               }
             }
           }

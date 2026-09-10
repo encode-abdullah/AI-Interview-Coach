@@ -91,6 +91,29 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
+## Deployment
+
+The project is configured for one-click deployment on Render using the included `render.yaml`.
+
+### Deploy to Render
+
+1. Fork or clone this repository to your GitHub account.
+2. Log in to [render.com](https://render.com) and create a new **Web Service**.
+3. Connect your GitHub repository (`encode-abdullah/AI-Interview-Coach`).
+4. Render will auto-detect the `render.yaml` configuration.
+5. Under **Environment Variables**, add:
+   - `GEMINI_API_KEY` -- your Google Gemini API key from [aistudio.google.com](https://aistudio.google.com)
+6. Click **Create Web Service** and wait for the build to complete (~2-3 minutes).
+7. Your app will be live at `https://ai-interview-coach.onrender.com`.
+
+### Environment Variables on Render
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GEMINI_API_KEY` | Google Gemini API key for AI responses | Yes |
+
+---
+
 ## How It Works
 
 1. **Paste a Job Description** -- Copy any job listing from LinkedIn, Indeed, or a company careers page.
